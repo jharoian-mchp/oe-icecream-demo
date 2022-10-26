@@ -13,23 +13,19 @@ RESULTS_DIR="$(readlink -m ${1:-$THIS_DIR/results})"
 
 IMAGE="core-image-minimal"
 
+NFS_DIR="/mnt/yocto-sstate"
+
 if ! which icecc > /dev/null 2>&1; then
     echo "icecc not found. Please install and configure icecream"
     exit 1
 fi
 
 if [ ! -d $THIS_DIR/poky ]; then
-    git clone -n git://git.yoctoproject.org/poky $THIS_DIR/poky
+    git clone -n https://github.com/yoctoproject/poky.git $THIS_DIR/poky
 fi
-git -C $THIS_DIR/poky checkout a76b6b317c9b9d8aef348f4639de8b0224d27a4d
+git -C $THIS_DIR/poky checkout dunfell
 
-if [ ! -d $THIS_DIR/poky/meta-pyrex ]; then
-    git clone -n https://github.com/garmin/pyrex.git $THIS_DIR/poky/meta-pyrex
-fi
-git -C $THIS_DIR/poky/meta-pyrex checkout 7b3e0b63156a6e42fc438d2faad84a20172a9524
-ln -sf ./meta-pyrex/pyrex-init-build-env $THIS_DIR/poky/pyrex-init-build-env
-
-mkdir -p $THIS_DIR/poky/downloads
+mkdir -p $NFS_DIR/downloads
 
 do_build() {
     local NAME="$1"
@@ -38,11 +34,13 @@ do_build() {
     # Cleanup any old build output
     cd $THIS_DIR/poky
     rm -rf build-$NAME
+    rm -rf $NFS_DIR/test-sstate
+    mkdir -p $NFS_DIR/test-sstate
 
     # Source the environment. This will change the CWD
     set +u
     export TEMPLATECONF="$THIS_DIR/conf/$NAME"
-    . pyrex-init-build-env build-$NAME
+    source oe-init-build-env build-$NAME
     set -u
 
     # Unpack all source. Downloading/unpacking has the most timing variability

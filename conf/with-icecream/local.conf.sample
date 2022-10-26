@@ -1,7 +1,8 @@
 CONF_VERSION = "1"
 
 # Share a download directory
-DL_DIR ?= "${TOPDIR}/downloads"
+DL_DIR ?= "/mnt/yocto-sstate/downloads"
+SSTATE_DIR ?= "/mnt/yocto-sstate/test-state"
 
 MACHINE ??= "qemux86-64"
 DISTRO ?= "poky"
