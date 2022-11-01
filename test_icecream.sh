@@ -11,7 +11,7 @@ THIS_DIR="$(readlink -f $(dirname $0))"
 
 RESULTS_DIR="$(readlink -m ${1:-$THIS_DIR/results})"
 
-IMAGE="core-image-minimal"
+IMAGE="microchip-headless-image"
 
 NFS_DIR="/mnt/yocto-sstate"
 
@@ -21,9 +21,16 @@ if ! which icecc > /dev/null 2>&1; then
 fi
 
 if [ ! -d $THIS_DIR/poky ]; then
-    git clone -n https://github.com/yoctoproject/poky.git $THIS_DIR/poky
+    git clone https://github.com/yoctoproject/poky.git $THIS_DIR/poky -b dunfell
 fi
-git -C $THIS_DIR/poky checkout dunfell
+
+if [ ! -d $THIS_DIR/meta-openembedded ]; then
+    git clone https://github.com/openembedded/meta-openembedded.git $THIS_DIR/meta-openembedded -b dunfell
+fi
+
+if [ ! -d $THIS_DIR/meta-atmel ]; then
+    git clone https://github.com/linux4sam/meta-atmel.git $THIS_DIR/meta-atmel -b dunfell
+fi
 
 mkdir -p $NFS_DIR/downloads
 
@@ -68,7 +75,7 @@ $THIS_DIR/poky/scripts/buildstats-diff --diff-attr walltime $RESULTS_DIR/without
 
 TOTALS_FILE=$RESULTS_DIR/task_totals.txt
 rm -f $TOTALS_FILE
-for task in do_configure do_compile do_install do_package_write_rpm; do
+for task in do_configure do_compile do_install do_package_write_ipk; do
     echo "$task:" >> $TOTALS_FILE
     $THIS_DIR/poky/scripts/buildstats-diff --only-task $task --diff-attr cputime $RESULTS_DIR/without-icecream $RESULTS_DIR/with-icecream | tail -2 >> $TOTALS_FILE
     $THIS_DIR/poky/scripts/buildstats-diff --only-task $task --diff-attr walltime $RESULTS_DIR/without-icecream $RESULTS_DIR/with-icecream | tail -2 >> $TOTALS_FILE
